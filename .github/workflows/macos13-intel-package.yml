@@ -44,6 +44,7 @@ jobs:
       - name: Check unsigned packaging toolchain
         run: pnpm run package:desktop:mac:x64:unsigned --check
       - name: Build unsigned Intel DMG
+        id: build
         run: pnpm run package:desktop:mac:x64:unsigned
       # Check prebuilt dependencies too: the deployment environment only affects local compilation.
       - name: Check packaged Mach-O architecture and minimum macOS
@@ -51,6 +52,7 @@ jobs:
           python3 - <<'PY'
           import runpy
           import subprocess
+          import tempfile
           from pathlib import Path
 
           checks = runpy.run_path('scripts/check-macos-deployment-target.py')
@@ -70,7 +72,14 @@ jobs:
               arches = subprocess.check_output(['lipo', '-archs', str(path)], text=True).split()
               if 'x86_64' not in arches:
                   raise RuntimeError(f'{path}: missing Intel slice ({arches})')
-              version = checks['deployment_target'](path)
+              # otool treats a trailing parenthesized helper name as an archive member.
+              with tempfile.TemporaryDirectory(prefix='dsh-macho-') as temporary:
+                  alias = Path(temporary) / 'executable'
+                  alias.symlink_to(path.resolve())
+                  try:
+                      version = checks['deployment_target'](alias)
+                  except subprocess.CalledProcessError as error:
+                      raise RuntimeError(f'{path}: otool failed: {error.stderr}') from error
               checks['ensure_compatible'](path, version, 'macosx_13_0_x86_64')
               count += 1
           if count == 0:
@@ -78,6 +87,8 @@ jobs:
           print(f'Checked {count} Mach-O files for Intel and macOS 13 compatibility')
           PY
       - name: Retain unsigned DMG
+        # Preserve the installer for diagnosis even when compatibility validation fails.
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         uses: actions/upload-artifact@v7.0.1
         with:
           name: macos13-intel-unsigned-${{ github.run_id }}-${{ github.run_attempt }}
