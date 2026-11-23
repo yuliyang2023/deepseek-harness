@@ -168,6 +168,7 @@ export function createElectronBuilderConfig(
       category: 'public.app-category.developer-tools',
       // macOS matches the application locale against this bundle, not Electron Framework resources.
       extendInfo: {
+        ...(env.DSH_DESKTOP_VENTURA_NATIVE_DIR === undefined ? {} : { LSMinimumSystemVersion: env.MACOSX_DEPLOYMENT_TARGET }),
         CFBundleLocalizations: ['en', 'zh_CN', 'ja', 'es', 'fr', 'de', 'ru', 'pt'],
         NSMicrophoneUsageDescription: 'DeepSeek Harness uses your microphone to transcribe speech into message drafts.',
       },

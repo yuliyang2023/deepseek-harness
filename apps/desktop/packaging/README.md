@@ -178,7 +178,7 @@ Add `--check` to validate local configuration and tools without building, or `--
 
 These commands ignore `.env.macos` and inherited release settings, use `com.deepseek.harness` as the app ID, and omit automatic-update and mandatory-update configuration. Build tools, standard network proxies, and `DSH_DESKTOP_NPM_REGISTRY` remain available from the shell. They skip Developer ID signing, Apple notarization, temporary signing keychains, and notarization proxy changes. Electron receives a local ad-hoc signature without certificates so the modified executable can run; the DMG is unsigned. Both preparation and the assembled application still run runtime integrity and smoke checks. Local builds omit update feeds, ZIPs, and release completion records, and the upload commands cannot publish them. macOS may require approval in System Settings → Privacy & Security to open an unnotarized application. These builds stage no Computer Use helper, so Computer Use reports the missing helper when it prepares.
 
-The macOS 13 Intel CI workflow rebuilds the Sherpa ONNX Node binding with a macOS 13.0 deployment target and inserts it before Desktop records its runtime integrity metadata. The workflow checks the packaged Mach-O files and retains the unsigned DMG for installation testing.
+The macOS 13 Intel CI workflow targets macOS 13.5, the minimum required by the bundled Node executable. It rebuilds the Sherpa ONNX and require-builtin Node addons before recording Desktop runtime integrity metadata. The workflow checks the packaged Mach-O files and retains the unsigned DMG for installation testing.
 
 <a id="macos-release-signing"></a>
 

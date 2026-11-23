@@ -21,7 +21,7 @@ jobs:
       run:
         shell: bash
     env:
-      MACOSX_DEPLOYMENT_TARGET: '13.0'
+      MACOSX_DEPLOYMENT_TARGET: '13.5'
       DSH_DESKTOP_TARGET_PLATFORM: darwin
       DSH_DESKTOP_TARGET_ARCH: x64
       DSH_TELEMETRY_DISABLED: '1'
@@ -43,19 +43,21 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Check unsigned packaging toolchain
         run: pnpm run package:desktop:mac:x64:unsigned --check
-      - name: Rebuild the speech binding for macOS 13
+      - name: Rebuild the native addons for macOS 13
         run: |
-          mkdir -p "$RUNNER_TEMP/ventura-sherpa"
-          bash apps/desktop/scripts/build-ventura-sherpa-addon.sh "$RUNNER_TEMP/ventura-sherpa"
+          mkdir -p "$RUNNER_TEMP/ventura-native-addons"
+          bash apps/desktop/scripts/build-ventura-native-addons.sh "$RUNNER_TEMP/ventura-native-addons"
       - name: Build unsigned Intel DMG
         id: build
         env:
-          DSH_DESKTOP_VENTURA_SHERPA_DIR: ${{ runner.temp }}/ventura-sherpa
+          DSH_DESKTOP_VENTURA_NATIVE_DIR: ${{ runner.temp }}/ventura-native-addons
         run: pnpm run package:desktop:mac:x64:unsigned
       # Check prebuilt dependencies too: the deployment environment only affects local compilation.
       - name: Check packaged Mach-O architecture and minimum macOS
         run: |
           python3 - <<'PY'
+          import os
+          import plistlib
           import runpy
           import subprocess
           import tempfile
@@ -68,6 +70,12 @@ jobs:
           magic = {b'\xcf\xfa\xed\xfe', b'\xce\xfa\xed\xfe', b'\xfe\xed\xfa\xcf',
                    b'\xfe\xed\xfa\xce', b'\xca\xfe\xba\xbe', b'\xbe\xba\xfe\xca',
                    b'\xca\xfe\xba\xbf', b'\xbf\xba\xfe\xca'}
+          minimum = os.environ['MACOSX_DEPLOYMENT_TARGET']
+          with (app / 'Contents/Info.plist').open('rb') as stream:
+              if plistlib.load(stream)['LSMinimumSystemVersion'] != minimum:
+                  raise RuntimeError(f'Expected the app to declare macOS {minimum} as its minimum')
+          target = minimum.replace('.', '_')
+          platform_tag = f'macosx_{target}_x86_64'
           count = 0
           for path in app.rglob('*'):
               if path.is_symlink() or not path.is_file():
@@ -86,7 +94,7 @@ jobs:
                       version = checks['deployment_target'](alias)
                   except subprocess.CalledProcessError as error:
                       raise RuntimeError(f'{path}: otool failed: {error.stderr}') from error
-              checks['ensure_compatible'](path, version, 'macosx_13_0_x86_64')
+              checks['ensure_compatible'](path, version, platform_tag)
               count += 1
           if count == 0:
               raise RuntimeError('No packaged Mach-O files checked')

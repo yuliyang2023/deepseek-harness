@@ -178,7 +178,7 @@ pnpm run package:desktop:mac:x64:unsigned
 
 这些命令忽略 `.env.macos` 和继承的发布配置，使用 `com.deepseek.harness` 作为应用 ID，并省略自动更新和强制更新配置。构建工具、标准网络代理与 `DSH_DESKTOP_NPM_REGISTRY` 仍可从 shell 提供。它们跳过 Developer ID 签名、Apple 公证、临时签名钥匙串和公证代理修改。Electron 使用无需证书的本地 ad-hoc 签名，以便修改后的可执行文件能够运行；DMG 不签名。准备阶段和组装后的应用仍执行运行时完整性与冒烟检查。本地构建不生成更新源、ZIP 或发布完成记录，上传命令无法发布这些产物。macOS 可能要求在“系统设置 → 隐私与安全性”中批准打开未经公证的应用。这类构建不放入 Computer Use helper，Computer Use 准备时会报告 helper 缺失。
 
-macOS 13 Intel CI 工作流以 macOS 13.0 为部署目标重新编译 Sherpa ONNX Node 扩展，并在 Desktop 记录运行时完整性元数据前放入该扩展。工作流检查打包后的 Mach-O 文件，并保留无发布签名的 DMG 供安装测试。
+macOS 13 Intel CI 工作流以 macOS 13.5 为目标，这是随包 Node 可执行文件要求的最低版本。工作流在记录 Desktop 运行时完整性元数据前重新编译 Sherpa ONNX 和 require-builtin Node 扩展，检查打包后的 Mach-O 文件，并保留无发布签名的 DMG 供安装测试。
 
 <a id="macos-release-signing"></a>
 
