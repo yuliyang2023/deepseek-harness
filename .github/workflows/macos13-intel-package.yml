@@ -43,8 +43,14 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Check unsigned packaging toolchain
         run: pnpm run package:desktop:mac:x64:unsigned --check
+      - name: Rebuild the speech binding for macOS 13
+        run: |
+          mkdir -p "$RUNNER_TEMP/ventura-sherpa"
+          bash apps/desktop/scripts/build-ventura-sherpa-addon.sh "$RUNNER_TEMP/ventura-sherpa"
       - name: Build unsigned Intel DMG
         id: build
+        env:
+          DSH_DESKTOP_VENTURA_SHERPA_DIR: ${{ runner.temp }}/ventura-sherpa
         run: pnpm run package:desktop:mac:x64:unsigned
       # Check prebuilt dependencies too: the deployment environment only affects local compilation.
       - name: Check packaged Mach-O architecture and minimum macOS
