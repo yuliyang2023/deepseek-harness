@@ -90,11 +90,16 @@ it('applies package-specific rules inside scoped and nested dependency container
   expect(desktopRuntimeFileExclusion('outer/fs-ext/build/Release/fs_ext.lib', windows, 'win32-x64')).toBeUndefined()
 })
 
-it('retains native prebuilds for the selected macOS architecture', () => {
-  const mac = { platform: 'darwin' as const, arch: 'arm64' }
-  expect(desktopRuntimeFileExclusion('node-pty/prebuilds/darwin-arm64/pty.node', mac, 'darwin-arm64')).toBeUndefined()
-  expect(desktopRuntimeFileExclusion('node-pty/prebuilds/darwin-x64/pty.node', mac, 'darwin-arm64')).toBeDefined()
-  expect(desktopRuntimeFileExclusion('node-pty/prebuilds/win32-x64/conpty.node', mac, 'darwin-arm64')).toBeDefined()
+it.each(['arm64', 'x64'] as const)('retains native prebuilds for macOS %s', (arch) => {
+  const target = { platform: 'darwin' as const, arch }
+  const current = `darwin-${arch}`
+  const other = arch === 'arm64' ? 'darwin-x64' : 'darwin-arm64'
+  expect(desktopRuntimeFileExclusion(`node-pty/prebuilds/${current}/pty.node`, target, current)).toBeUndefined()
+  expect(desktopRuntimeFileExclusion(`node-pty/prebuilds/${other}/pty.node`, target, current)).toBeDefined()
+  expect(desktopRuntimeFileExclusion('node-pty/prebuilds/win32-x64/conpty.node', target, current)).toBeDefined()
+  const frameForwarding = '@deepseek-ai/libreoffice-kit/frame-forwarding/prebuilds'
+  expect(desktopRuntimeFileExclusion(`${frameForwarding}/${current}`, target, current)).toBeUndefined()
+  expect(desktopRuntimeFileExclusion(`${frameForwarding}/${other}`, target, current)).toBe('LibreOffice frame-forwarding other platform')
 })
 
 it.each([
