@@ -38,6 +38,10 @@ export function desktopRuntimeFileExclusion(
   if (name === 'node-pty' && target.platform !== 'win32' && /^third_party\/conpty(?:\/|$)/u.test(entry)) {
     return 'node-pty Windows ConPTY sources'
   }
+  if (name === '@deepseek-ai/libreoffice-kit' && entry.startsWith('frame-forwarding/prebuilds/')) {
+    const platform = packageParts[nameParts + 2]
+    if (platform !== undefined && platform !== `${target.platform}-${target.arch}`) return 'LibreOffice frame-forwarding other platform'
+  }
   if (name === 'node-pty' && entry.startsWith('prebuilds/')) {
     const platform = packageParts[nameParts + 1]
     if (platform !== undefined && platform !== `${target.platform}-${target.arch}`) return 'node-pty other platform'
