@@ -142,6 +142,21 @@ async function main(): Promise<void> {
     const targetName = resolveDesktopBuildTarget()
     const target = desktopTargetPlatform(targetName)
     const modules = join(BUILD_ROOT, 'node_modules')
+    const venturaNative = process.env.DSH_DESKTOP_VENTURA_NATIVE_DIR
+    if (venturaNative !== undefined) {
+      if (targetName !== 'mac-x64' || process.env.DSH_DESKTOP_UNSIGNED !== '1') {
+        throw new Error('desktop runtime: Ventura native addons require unsigned macOS Intel packaging')
+      }
+      const bindings = {
+        'sherpa-onnx-darwin-x64': 'sherpa-onnx.node',
+        'node-addon-require-builtin-darwin-x64': 'prebuilt/darwin-x64-napi-v9.node',
+      }
+      for (const [name, binding] of Object.entries(bindings)) {
+        const directory = join(modules, name)
+        const version = manifestVersion(join(directory, 'package.json'), name)
+        copyFileSync(join(venturaNative, name, version, binding), join(directory, binding))
+      }
+    }
     const officeManifest = JSON.parse(readFileSync(join(modules, '@deepseek-ai/libreoffice-kit/package.json'), 'utf8'))
     const officeEngine = selectOfficeEngine(officeManifest, target)
     mkdirSync(DSH_OUTPUT_ROOT, { recursive: true })
