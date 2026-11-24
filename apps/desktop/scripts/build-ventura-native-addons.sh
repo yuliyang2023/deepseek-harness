@@ -55,7 +55,8 @@ while IFS= read -r source; do
   builtin_sources+=("$source")
 done < "$scratch/builtin-sources.txt"
 
-builtin_output="$output_dir/node-addon-require-builtin-darwin-x64/0.1.9/prebuilt"
+# Desktop resolves the production addon in its own install.
+builtin_output="$output_dir/node-addon-require-builtin-darwin-x64/0.1.10/prebuilt"
 mkdir -p "$builtin_output"
 builtin="$builtin_output/darwin-x64-napi-v9.node"
 xcrun clang++ -arch x86_64 -mmacosx-version-min=13.0 -std=c++17 -O2 \
